@@ -1,0 +1,30 @@
+{
+  "name": "@sevasignal/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "operator:create": "node scripts/create-operator.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "catalog:seed": "node scripts/seed-catalog.js",
+    "centre:create": "node scripts/create-centre.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "cookie-parser": "1.4.7",
+    "cors": "2.8.6",
+    "dotenv": "18.0.5",
+    "express": "5.2.1",
+    "express-rate-limit": "8.7.1",
+    "helmet": "8.3.0",
+    "pg": "8.23.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "supertest": "7.3.1"
+  }
+}

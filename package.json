@@ -1,0 +1,35 @@
+{
+  "name": "sevasignal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Check local service availability before you travel.",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "setup": "node scripts/setup-env.mjs",
+    "db:setup": "npm run db:migrate -w backend && npm run db:seed -w backend",
+    "db:migrate": "npm run db:migrate -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "operator:create": "npm run operator:create -w backend",
+    "dev": "concurrently --kill-others -n API,WEB -c cyan,green \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "demo": "npm run setup && npm run db:setup && npm run dev",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "test": "npm run test -w backend",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "catalog:seed": "npm run catalog:seed -w backend",
+    "centre:create": "npm run centre:create -w backend",
+    "test:ui": "npm run build && node scripts/test-ui.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.5",
+    "playwright": "1.63.0",
+    "prettier": "3.9.9"
+  }
+}
