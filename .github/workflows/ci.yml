@@ -1,0 +1,55 @@
+name: SevaSignal CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Test application and build frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Existing tests create their own isolated embedded test databases.
+      - name: Run backend tests
+        run: npm test
+
+      - name: Build React frontend
+        run: npm run build
+
+  docker-build:
+    name: Build Docker images
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Build backend image
+        run: docker build --tag sevasignal-backend:ci ./backend
+
+      - name: Build frontend image
+        run: docker build --tag sevasignal-frontend:ci ./frontend
