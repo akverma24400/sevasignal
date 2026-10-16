@@ -11,14 +11,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test-and-build:
-    name: Test application and build frontend
+    name: Test and build application
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
@@ -32,24 +33,54 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Existing tests create their own isolated embedded test databases.
       - name: Run backend tests
         run: npm test
 
-      - name: Build React frontend
+      - name: Build frontend
         run: npm run build
 
-  docker-build:
-    name: Build Docker images
+  docker:
+    name: Docker - ${{ matrix.service }}
     needs: test-and-build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    strategy:
+      matrix:
+        service: [frontend, backend]
+
+    env:
+      IMAGE: akash24400/sevasignal-${{ matrix.service }}
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
 
-      - name: Build backend image
-        run: docker build --tag sevasignal-backend:ci ./backend
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t "$IMAGE:$GITHUB_SHA" \
+            -t "$IMAGE:latest" \
+            "./${{ matrix.service }}"
 
-      - name: Build frontend image
-        run: docker build --tag sevasignal-frontend:ci ./frontend
+      - name: Log in to Docker Hub
+        if: env.PUBLISH == 'true'
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          printf '%s' "$DOCKERHUB_TOKEN" |
+            docker login \
+              --username "$DOCKERHUB_USERNAME" \
+              --password-stdin
+
+      - name: Push Docker image
+        if: env.PUBLISH == 'true'
+        run: |
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+
+      - name: Log out
+        if: always() && env.PUBLISH == 'true'
+        run: docker logout
