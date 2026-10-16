@@ -32,6 +32,7 @@ services:
       DATABASE_MODE: postgres
       DATABASE_URL: postgresql://sevasignal:local_test_password@database:5432/sevasignal
       DATABASE_SSL: "false"
+      TRUST_PROXY_HOPS: "1"
     depends_on:
       database:
         condition: service_healthy
@@ -54,8 +55,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    environment:
-      API_PROXY_TARGET: http://backend:5000
     ports:
       - "5173:5173"
     depends_on:

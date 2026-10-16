@@ -1,0 +1,35 @@
+# Upload this file as docker-compose.yml at the root of the deployment ZIP.
+services:
+  backend:
+    image: akash24400/sevasignal-backend:${IMAGE_TAG:?Set IMAGE_TAG to a published commit SHA}
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "5000"
+      DATABASE_MODE: postgres
+      DATABASE_URL: ${DATABASE_URL:?Set the RDS PostgreSQL connection URL}
+      DATABASE_SSL: "true"
+      DATABASE_CA_FILE: /certs/global-bundle.pem
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set your HTTPS website origin}
+      SHOW_DEMO_HELP: "false"
+      # Required topology: ALB -> frontend Nginx -> backend.
+      TRUST_PROXY_HOPS: "2"
+    volumes:
+      - ./certs:/certs:ro
+    expose:
+      - "5000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    image: akash24400/sevasignal-frontend:${IMAGE_TAG:?Set IMAGE_TAG to a published commit SHA}
+    ports:
+      - "80:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped

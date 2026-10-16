@@ -14,6 +14,7 @@ import { operatorRoutes } from './routes/operator.js';
 export function createApp(db, config) {
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', config.trustProxyHops || false);
   app.use(
     helmet({
       contentSecurityPolicy: {

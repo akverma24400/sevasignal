@@ -12,6 +12,7 @@ const integer = (value, fallback, min, max) => {
 export function loadConfig(overrides = {}) {
   const config = {
     mode: process.env.NODE_ENV || 'development',
+    trustProxyHops: integer(process.env.TRUST_PROXY_HOPS, 0, 0, 5),
     port: integer(process.env.PORT, 5000, 1, 65535),
     host: process.env.HOST || '127.0.0.1',
     origins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173')

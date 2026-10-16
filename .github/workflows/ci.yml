@@ -64,6 +64,10 @@ jobs:
             -t "$IMAGE:latest" \
             "./${{ matrix.service }}"
 
+      - name: Validate frontend Nginx configuration
+        if: matrix.service == 'frontend'
+        run: docker run --rm --entrypoint nginx "$IMAGE:$GITHUB_SHA" -t
+
       - name: Log in to Docker Hub
         if: env.PUBLISH == 'true'
         env:
