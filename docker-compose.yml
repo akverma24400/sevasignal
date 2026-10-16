@@ -1,6 +1,24 @@
-# SevaSignal EC2 demo using embedded PGlite.
+# SevaSignal local/EC2 demo with PostgreSQL.
 # Run from the repository root: docker compose up -d --build
+# Development mode permits HTTP demo login; AWS production needs HTTPS and RDS.
+# The password below is for this demo database only.
 services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: sevasignal
+      POSTGRES_USER: sevasignal
+      POSTGRES_PASSWORD: local_test_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sevasignal -d sevasignal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -11,10 +29,13 @@ services:
       NODE_ENV: development
       HOST: 0.0.0.0
       PORT: "5000"
-      DATABASE_MODE: embedded
-      EMBEDDED_DATA_DIR: .data/sevasignal
-    volumes:
-      - sevasignal_data:/app/.data
+      DATABASE_MODE: postgres
+      DATABASE_URL: postgresql://sevasignal:local_test_password@database:5432/sevasignal
+      DATABASE_SSL: "false"
+    depends_on:
+      database:
+        condition: service_healthy
+    # Single-backend demo initialization. Use a coordinated migration step on AWS.
     command:
       - sh
       - -c
@@ -43,4 +64,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
+  # Retained for the old embedded demo; its data is not migrated to PostgreSQL.
   sevasignal_data:
