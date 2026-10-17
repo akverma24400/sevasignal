@@ -14,14 +14,14 @@ services:
       SHOW_DEMO_HELP: "false"
       # Required topology: ALB -> frontend Nginx -> backend.
       TRUST_PROXY_HOPS: "2"
-      # Inserting Default Data from seed.js
+      # Optional fictional data; requires an explicit production password.
       ENABLE_DEMO_SEED: "${ENABLE_DEMO_SEED:-false}"
       DEMO_PASSWORD: "${DEMO_PASSWORD:-}"
     volumes:
       - ./certs:/certs:ro
     expose:
       - "5000"
-    # Initial single-instance deployment: initialize tables before starting.
+    # Initial single-instance setup only; use a separate migration job before scaling.
     command:
       - sh
       - -c

@@ -4,7 +4,7 @@
 
 SevaSignal helps citizens find a participating service centre, check individual services, read the operator's latest confirmation, and find available alternatives. Centre operators manage their own listings through a protected dashboard.
 
-Built for Akash Verma's **Build on Elastic Beanstalk** hackathon project. This delivery contains the application and local setup only. There is no cloud provisioning, deployment configuration, Docker, or CI/CD implementation.
+Built for Akash Verma's **Build on Elastic Beanstalk** hackathon project. The repository includes the application, local Docker setup, GitHub Actions image publishing, and an Elastic Beanstalk Compose template. AWS resources are configured separately; follow [the deployment guide](docs/DEPLOYMENT.md).
 
 Preview: [citizen directory](docs/screenshots/directory.png) · [operator dashboard](docs/screenshots/dashboard.png) · [Hindi on mobile](docs/screenshots/mobile-hindi.png).
 
@@ -58,7 +58,7 @@ SevaDemo2026!
 
 You may choose a different `DEMO_PASSWORD` in `backend/.env` **before the first seed**. Changing this variable later does not reset existing passwords. Use the dashboard's **Centre profile → Change password** for an existing account.
 
-These credentials are for the local demo. Sample accounts are created only by the explicit seed command; the server never silently creates accounts on startup.
+These credentials are for the local demo only. On Beanstalk, the Compose startup command creates sample data only when `ENABLE_DEMO_SEED=true` and an explicit `DEMO_PASSWORD` of at least 12 characters is supplied. It never falls back to this local password in production. See [the production demo setup](docs/DEPLOYMENT.md#3-initialize-the-database-and-optionally-create-hackathon-accounts).
 
 ### Starting again
 
@@ -119,9 +119,10 @@ The project includes **`backend/.env.example`** and **`frontend/.env.example`**.
 | `SESSION_TTL_HOURS`          | `8`                                                        | Fixed session lifetime; integer 1–168.                                                           |
 | `DEFAULT_STATUS_TTL_MINUTES` | `60`                                                       | Initially selected confirmation validity; integer 1–240.                                         |
 | `SHOW_DEMO_HELP`             | `true`                                                     | Show local demo sign-in help. Does not create or delete accounts.                                |
-| `DEMO_PASSWORD`              | `SevaDemo2026!`                                            | Password for newly seeded sample accounts only; at least 12 characters.                          |
+| `ENABLE_DEMO_SEED`           | `false`                                                    | Set exactly `true` to allow the demo seed command in production.                                 |
+| `DEMO_PASSWORD`              | `SevaDemo2026!` locally; none in production                  | Password for newly seeded sample accounts only; at least 12 characters.                          |
 
-In `production`, cookies require HTTPS. The local quick start intentionally uses development settings. Hosting and proxy configuration are left for your later deployment work.
+In `production`, cookies require HTTPS. The local quick start intentionally uses development settings. See [the deployment guide](docs/DEPLOYMENT.md) for the required hosting and proxy configuration.
 
 ### Frontend settings
 
@@ -259,6 +260,6 @@ For a fresh demo without deleting old work, stop the app and choose a **differen
 
 ## Deliberate boundaries
 
-This version includes the core citizen/operator application. It does not implement government API connections, identity verification, WhatsApp/SMS notifications, AI-generated status claims, maps or distance ranking, bookings, payments, password recovery email, monitoring infrastructure, or deployment automation. No external service credentials are required for the included features.
+This version includes the core citizen/operator application. It does not implement government API connections, identity verification, WhatsApp/SMS notifications, AI-generated status claims, maps or distance ranking, bookings, payments, password recovery email, monitoring infrastructure, or automatic deployment to AWS. GitHub Actions publishes Docker images; Beanstalk deployment remains a separate step. No external service credentials are required for the local application.
 
 For your hackathon presentation, start with [the demo walkthrough](docs/DEMO.md). Once you are comfortable with the local app, its build/start commands, environment variables, and database adapter give you clear application entry points for your own DevOps work.

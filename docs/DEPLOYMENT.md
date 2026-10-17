@@ -31,28 +31,52 @@ Set Beanstalk environment properties:
 Use the example in deploy/beanstalk/.env.example. Store actual credentials in AWS,
 never commit them. Production login requires HTTPS because cookies are Secure.
 
-## 3. Initialize the database before the first application deployment
+## 3. Initialize the database and optionally create hackathon accounts
 
-From an authorized admin machine with network access to RDS and Docker installed,
-create a temporary working directory containing the production Compose file,
-a private .env containing the three environment properties, and certs/global-bundle.pem
-(download command below). Restrict .env permissions with chmod 600.
+For the initial one-instance deployment, the production Compose file runs
+migrations, seeds the service catalogue, optionally seeds fictional demo data,
+and then starts Express. Keep minimum and maximum application instances at 1
+for this setup. Database connectivity and the RDS certificate must work first.
 
-Run from that directory:
+To create the sample centres, services, history, and operator accounts through
+the AWS Console, add these Beanstalk environment properties:
+
+- ENABLE_DEMO_SEED: true
+- DEMO_PASSWORD: a unique password of at least 12 characters, entered literally
+  (not URL-encoded). This is a website login password, not the RDS password.
+
+Publish the updated images, use their successful CI commit SHA as IMAGE_TAG,
+and upload a new ZIP containing the updated production Compose file and certs/.
+Adding environment properties alone does not update an old image or Compose file.
+Never commit the password to GitHub or include a real .env in the ZIP.
+
+The fictional operator accounts are:
+- roorkee@sevasignal.demo
+- dehradun@sevasignal.demo
+- haridwar@sevasignal.demo
+
+All newly created demo accounts use DEMO_PASSWORD, stored as a password hash.
+Existing accounts, passwords, and centre records are preserved. Changing this
+environment property later will not reset existing passwords. Sample statuses
+expire normally; the seed does not refresh them on each restart.
+
+Once the sample records exist, set ENABLE_DEMO_SEED=false and apply the change.
+The existing records remain. Login still requires HTTPS and the correct
+CLIENT_ORIGIN; enabling seeding does not change cookie security.
+
+If you want your own centre/operator instead of the fictional accounts, use
+the browser terminal connected to the existing Beanstalk EC2 instance:
 
 ```bash
-docker compose pull backend
-docker compose run --rm --no-deps backend npm run db:migrate
-docker compose run --rm --no-deps backend npm run catalog:seed
-docker compose run --rm --no-deps backend npm run centre:create
-docker compose run --rm --no-deps backend npm run operator:create
+cd /var/app/current
+sudo docker compose exec backend npm run centre:create
+sudo docker compose exec backend npm run operator:create
 ```
 
-The last two commands prompt for centre and operator details.
-Do not run db:seed in production; it creates demo accounts.
-For later releases, run migrations once through this controlled admin process
-before deploying compatible application code. Do not run migrations independently
-on every autoscaled instance. Back up the database before schema changes.
+Before enabling multiple instances or overlapping deployment batches, move the
+migration/initialization commands into a controlled one-off deployment job and
+change the backend command to node src/server.js. Back up the database before
+schema changes.
 
 ## 4. Build the deployment ZIP
 
@@ -67,7 +91,6 @@ curl --fail --show-error --location \
 (cd /tmp/sevasignal-eb && zip -r "$OLDPWD/sevasignal-eb.zip" docker-compose.yml certs)
 ```
 
-Use the same certificate download for the admin setup in step 3.
 The ZIP must contain docker-compose.yml and certs/ at its root.
 Do not include .env, the local demo Compose file, or source Dockerfiles.
 Refresh the RDS CA bundle when AWS rotates certificates.
