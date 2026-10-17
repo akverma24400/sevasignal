@@ -14,10 +14,18 @@ services:
       SHOW_DEMO_HELP: "false"
       # Required topology: ALB -> frontend Nginx -> backend.
       TRUST_PROXY_HOPS: "2"
+      # Inserting Default Data from seed.js
+      ENABLE_DEMO_SEED: "${ENABLE_DEMO_SEED:-false}"
+      DEMO_PASSWORD: "${DEMO_PASSWORD:-}"
     volumes:
       - ./certs:/certs:ro
     expose:
       - "5000"
+    # Initial single-instance deployment: initialize tables before starting.
+    command:
+      - sh
+      - -c
+      - npm run db:migrate && npm run catalog:seed && npm run db:seed && exec node src/server.js
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
